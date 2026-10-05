@@ -1,15 +1,13 @@
 from fastapi import FastAPI
 import yt_dlp
 import traceback
+import threading
 
 app = FastAPI()
 
-@app.get("/")
-def ping():
-    return {"status": "alive"}
-
-@app.get("/test")
-def test_dl(url: str = "https://www.youtube.com/watch?v=BaW_C9pBvwQ"):
+def test_ytdlp():
+    print("Testing yt-dlp on YouTube...")
+    url = "https://www.youtube.com/watch?v=BaW_C9pBvwQ"
     ydl_opts = {
         'format': 'worst',
         'quiet': True,
@@ -18,6 +16,15 @@ def test_dl(url: str = "https://www.youtube.com/watch?v=BaW_C9pBvwQ"):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            return {"status": "success", "title": info.get("title")}
+            print("yt-dlp SUCCESS! Title:", info.get("title"))
     except Exception as e:
-        return {"status": "error", "message": str(e), "trace": traceback.format_exc()}
+        print("yt-dlp ERROR:")
+        print(traceback.format_exc())
+
+@app.on_event("startup")
+def on_startup():
+    threading.Thread(target=test_ytdlp, daemon=True).start()
+
+@app.get("/")
+def ping():
+    return {"status": "alive"}
